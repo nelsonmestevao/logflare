@@ -204,7 +204,7 @@ defmodule Logflare.Mixfile do
       # Postgres Subscribe
       {:cainophile, github: "Logflare/cainophile", ref: "267999b"},
       {:open_api_spex, "~> 3.16"},
-      {:grpc, "~> 0.9.0"},
+      {:grpc, "~> 0.10.1"},
       {:protobuf, "~> 0.12"},
       {:gun, "~> 2.0", override: true},
       {:cowlib, ">=2.12.0", override: true},
