@@ -2,8 +2,11 @@ defmodule Logflare.Logs.Vercel.NimbleLambdaMessageParser do
   @moduledoc """
   Parser for incoming Vercel Lambda messages
   """
+
   import NimbleParsec
+
   alias Logflare.JSON
+
   require Logger
 
   def parse(input) do
@@ -170,25 +173,28 @@ defmodule Logflare.Logs.Vercel.NimbleLambdaMessageParser do
     if maybe_json do
       maybe_json
       |> String.replace("\n", "")
-      |> JSON.decode()
-      |> case do
-        {:ok, json} ->
-          %{"data" => json, "message" => message}
-
-        _ ->
-          result = maybe_parse_multiline_json_body(maybe_json)
-
-          case result do
-            {"lines", lines} ->
-              %{"multiline" => lines}
-
-            _ ->
-              message = Keyword.values(tokens) |> Enum.join("")
-              %{"message" => message}
-          end
-      end
+      |> build_map(message, tokens)
     else
       %{"message" => message}
+    end
+  end
+
+  defp build_map(maybe_json, message, tokens) do
+    case JSON.decode(maybe_json) do
+      {:ok, json} ->
+        %{"data" => json, "message" => message}
+
+      _ ->
+        result = maybe_parse_multiline_json_body(maybe_json)
+
+        case result do
+          {"lines", lines} ->
+            %{"multiline" => lines}
+
+          _ ->
+            message = Keyword.values(tokens) |> Enum.join("")
+            %{"message" => message}
+        end
     end
   end
 
