@@ -82,7 +82,7 @@ defmodule Logflare.Mixfile do
       {:phoenix_live_view, "~> 1.0.0"},
       {:phoenix_view, "~> 2.0"},
       {:phoenix_pubsub, "~> 2.1"},
-      {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_ecto, "~> 4.5"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
       {:bandit, "~> 1.8"},
       {:plug_crypto, "~> 1.2.2"},
@@ -144,7 +144,8 @@ defmodule Logflare.Mixfile do
 
       # Test
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:phoenix_test, "~> 0.8.0", only: :test, runtime: false},
+      {:phoenix_test, "~> 0.9.1", only: :test, runtime: false},
+      {:phoenix_test_playwright, "~> 0.9.1", only: :test, runtime: false},
       {:mimic, "~> 2.0", only: [:dev, :test]},
       {:stream_data, "~> 1.2.0", only: [:dev, :test]},
 
