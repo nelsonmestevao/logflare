@@ -56,4 +56,22 @@ config :logger,
 
 config :tesla, Logflare.Backends.Adaptor.WebhookAdaptor.Client, adapter: Tesla.Mock
 
-config :phoenix_test, otp_app: :logflare
+config :phoenix_test,
+  otp_app: :logflare,
+  endpoint: LogflareWeb.Endpoint,
+  playwright: [
+    browser_pool: :chromium_pool,
+    browser_pools: [
+      [
+        id: :chromium_pool,
+        browser: :chromium,
+        executable_path: System.get_env("PLAYWRIGHT_EXECUTABLE_PATH", "")
+      ],
+      [id: :firefox_pool, browser: :firefox]
+    ],
+    trace: true,
+    screenshot: true,
+    js_logger: true,
+    timeout: :timer.seconds(4),
+    browser_launch_timeout: 10_000
+  ]
