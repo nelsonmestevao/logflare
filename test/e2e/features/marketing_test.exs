@@ -1,8 +1,10 @@
 defmodule E2E.Features.MarketingTest do
   use PhoenixTest.Playwright.Case,
-    async: true,
-    headless: true,
+    async: false,
+    headless: false,
     slow_mo: :timer.seconds(2)
+
+  import Logflare.Factory
 
   import Phoenix.VerifiedRoutes
 
@@ -10,15 +12,16 @@ defmodule E2E.Features.MarketingTest do
   @endpoint LogflareWeb.Endpoint
 
   setup do
-    # pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Logflare.Repo, shared: false)
-    # on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
     start_supervised!(Logflare.SystemMetricsSup)
     :ok
   end
 
   test "goes to visit page", %{conn: conn} do
+    insert(:plan, price: 123, period: "month", name: "Metered")
+    insert(:plan, price: 123, period: "month", name: "Metered BYOB")
+
     conn
-    |> visit(~p"/pricing")
+    |> visit("http://localhost:4001/pricing")
     |> screenshot("error.png", full_page: true)
   end
 end

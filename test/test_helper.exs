@@ -2,9 +2,6 @@ Mix.Task.run("app.start")
 
 ExUnit.start()
 
-{:ok, _} = PhoenixTest.Playwright.Supervisor.start_link()
-Application.put_env(:phoenix_test, :base_url, LogflareWeb.Endpoint.url())
-
 # Mimic mocks setup
 Mimic.copy(Broadway)
 Mimic.copy(Ch)
@@ -76,3 +73,5 @@ ExUnit.configure(
 )
 
 Ecto.Adapters.SQL.Sandbox.mode(Logflare.Repo, :manual)
+Application.put_env(:phoenix_test, :base_url, dbg(LogflareWeb.Endpoint.url()))
+{:ok, _} = PhoenixTest.Playwright.Supervisor.start_link()

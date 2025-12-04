@@ -1,14 +1,14 @@
 import Config
 
-# We don't run a server during test. If one is required,
-# you can enable the server option below.
-config :logflare, LogflareWeb.Endpoint,
-  http: [port: 4001],
-  server: true
-
 config :logflare,
   env: :test,
+  dev_routes: true,
+  sql_sandbox: true,
   encryption_key_default: "Q+IS7ogkzRxsj+zAIB1u6jNFquxkFzSrBZXItN27K/Q="
+
+config :logflare, LogflareWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4001],
+  server: true
 
 config :logflare, Logflare.Cluster.Utils, min_cluster_size: 1
 
@@ -60,15 +60,17 @@ config :phoenix_test,
   otp_app: :logflare,
   endpoint: LogflareWeb.Endpoint,
   playwright: [
-    browser_pool: :chromium_pool,
-    browser_pools: [
-      [
-        id: :chromium_pool,
-        browser: :chromium,
-        executable_path: System.get_env("PLAYWRIGHT_EXECUTABLE_PATH", "")
-      ],
-      [id: :firefox_pool, browser: :firefox]
-    ],
+    browser: :chromium,
+    executable_path: System.get_env("PLAYWRIGHT_EXECUTABLE_PATH", ""),
+    # browser_pool: :chromium_pool,
+    # browser_pools: [
+    #   [
+    #     id: :chromium_pool,
+    #     browser: :chromium,
+    #     executable_path: System.get_env("PLAYWRIGHT_EXECUTABLE_PATH", "")
+    #   ]
+    #   # [id: :firefox_pool, browser: :firefox]
+    # ],
     trace: true,
     screenshot: true,
     js_logger: true,

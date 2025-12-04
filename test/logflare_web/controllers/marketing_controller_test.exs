@@ -3,7 +3,7 @@ defmodule LogflareWeb.MarketingControllerTest do
   use LogflareWeb.ConnCase
 
   setup do
-    # start_supervised!(Logflare.SystemMetricsSup)
+    start_supervised!(Logflare.SystemMetricsSup)
     :ok
   end
 
