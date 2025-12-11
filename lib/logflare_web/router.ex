@@ -145,6 +145,10 @@ defmodule LogflareWeb.Router do
     plug(LogflareWeb.Plugs.VerifyApiAccess, scopes: ~w(partner))
   end
 
+  @common_on_mount_hooks if Application.compile_env(:logflare, :sql_sandbox),
+                           do: [LogflareWeb.Hooks.LiveAcceptance],
+                           else: []
+
   # Oauth2 Provider Routes
   scope "/" do
     pipe_through([:api, :oauth_public])
@@ -189,7 +193,7 @@ defmodule LogflareWeb.Router do
   scope "/", LogflareWeb do
     pipe_through([:browser, :require_auth])
 
-    live_session :dashboard, on_mount: LogflareWeb.AuthLive do
+    live_session :dashboard, on_mount: @common_on_mount_hooks ++ [LogflareWeb.AuthLive] do
       live("/dashboard", DashboardLive, :index)
       live("/access-tokens", AccessTokensLive, :index)
       live("/backends", BackendsLive, :index)
@@ -207,7 +211,7 @@ defmodule LogflareWeb.Router do
   scope "/endpoints", LogflareWeb do
     pipe_through([:browser, :require_auth])
 
-    live_session :endpoints, on_mount: LogflareWeb.AuthLive do
+    live_session :endpoints, on_mount: @common_on_mount_hooks ++ [LogflareWeb.AuthLive] do
       live("/", EndpointsLive, :index)
       live("/new", EndpointsLive, :new)
       live("/:id", EndpointsLive, :show)
@@ -218,7 +222,7 @@ defmodule LogflareWeb.Router do
   scope "/alerts", LogflareWeb do
     pipe_through([:browser, :require_auth])
 
-    live_session :alerts, on_mount: LogflareWeb.AuthLive do
+    live_session :alerts, on_mount: @common_on_mount_hooks ++ [LogflareWeb.AuthLive] do
       live "/", AlertsLive, :index
       live "/new", AlertsLive, :new
       live "/:id", AlertsLive, :show
@@ -535,7 +539,7 @@ defmodule LogflareWeb.Router do
     end
   end
 
-  if Mix.env() == :dev do
+  if Application.compile_env(:logflare, :dev_routes) do
     scope "/dev" do
       pipe_through([:browser])
 
