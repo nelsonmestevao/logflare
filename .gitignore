@@ -76,11 +76,15 @@ gcloud_prod.json
 # DB ssl certs
 .*.*.pem
 
-# google keys
-.*.gcloud.json
+# playwright screenshots
+/screenshots
 
+# Integration tests with supabase
 supabase/
 !test/e2e/supabase/
+
+# google keys
+.*.gcloud.json
 
 examples/**/.dev.vars
 examples/**/node_modules
