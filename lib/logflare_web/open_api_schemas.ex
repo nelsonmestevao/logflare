@@ -99,6 +99,7 @@ defmodule LogflareWeb.OpenApiSchemas do
   defmodule Source do
     @properties %{
       name: %Schema{type: :string},
+      description: %Schema{type: :string, nullable: true},
       token: %Schema{type: :string},
       id: %Schema{type: :integer},
       favorite: %Schema{type: :boolean},
