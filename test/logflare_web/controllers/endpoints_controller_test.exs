@@ -698,17 +698,17 @@ defmodule LogflareWeb.EndpointsControllerTest do
         table = PgRepo.table_name(source)
         schema = backend.config.schema || "public"
 
-        TestUtils.retry_assert([duration: 5_000, sleep: 100], fn ->
-          result =
-            SharedRepo.with_repo(backend, fn ->
-              SharedRepo.query(
-                "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
-                [schema, table]
-              )
-            end)
+        # TestUtils.retry_assert([duration: 1, sleep: 1], fn ->
+        result =
+          SharedRepo.with_repo(backend, fn ->
+            SharedRepo.query(
+              "SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
+              [schema, table]
+            )
+          end)
 
-          assert {:ok, %{num_rows: 1}} = result
-        end)
+        assert {:ok, %{num_rows: 1}} = result
+        # end)
       end
 
       %{user: user}
