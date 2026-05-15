@@ -307,7 +307,7 @@ defmodule Logflare.Google.BigQuery do
     emails =
       for x <- [user | team_users], x.provider == "google", do: x.email
 
-    if Enum.count(user.sources) > 0 do
+    if not Enum.empty?(user.sources) do
       Tasks.start_child(fn ->
         patch(dataset_id, emails, project_id, user.id)
       end)
