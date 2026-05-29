@@ -1,0 +1,24 @@
+# BigQuery backend overlay for the Supabase E2E stack.
+#
+# Layered on top of docker-compose.yml + docker-compose.e2e.yml by bin/compose
+# only when LF_E2E_BACKEND=bigquery. The setup script first strips
+# POSTGRES_BACKEND_* from the cloned upstream compose; with no POSTGRES_BACKEND_URL
+# present, Logflare falls back to the BigQuery backend (see config/runtime.exs).
+#
+# Required env vars (validated by setup-supabase-services.sh):
+#   GOOGLE_PROJECT_ID      - GCP project id
+#   GOOGLE_PROJECT_NUMBER  - GCP project number
+#   LOGFLARE_GCLOUD_JSON   - absolute host path to the service-account key JSON;
+#                            mounted to the release working dir as gcloud.json,
+#                            which config/runtime.exs loads into :goth.
+# Optional:
+#   GOOGLE_DATASET_ID_APPEND - dataset name suffix; use a per-run unique value in
+#                              CI to isolate parallel matrix legs (default _e2e).
+services:
+  analytics:
+    environment:
+      GOOGLE_PROJECT_ID: ${GOOGLE_PROJECT_ID}
+      GOOGLE_PROJECT_NUMBER: ${GOOGLE_PROJECT_NUMBER}
+      GOOGLE_DATASET_ID_APPEND: ${GOOGLE_DATASET_ID_APPEND:-_e2e}
+    volumes:
+      - ${LOGFLARE_GCLOUD_JSON:?LOGFLARE_GCLOUD_JSON must point to the GCP service-account JSON}:/opt/app/rel/logflare/bin/gcloud.json:ro
