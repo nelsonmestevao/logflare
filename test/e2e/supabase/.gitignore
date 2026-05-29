@@ -1,6 +1,10 @@
 # Supabase
 supabase/
 
+# BigQuery backend service-account key (never commit)
+gcloud.json
+*.sa.json
+
 # Playwright
 node_modules/
 /test-results/

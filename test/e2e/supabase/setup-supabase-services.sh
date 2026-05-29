@@ -20,6 +20,29 @@ log() {
 warn() { echo -e "${GREY}[$(date +"%Y-%m-%d %H:%M:%S")]${RESET} ${YELLOW}[!]${RESET} $1"; }
 error() { echo -e "${GREY}[$(date +"%Y-%m-%d %H:%M:%S")]${RESET} ${RED}[✗]${RESET} $1"; }
 
+if [ "$LF_E2E_BACKEND" = "bigquery" ]; then
+  missing=""
+  [ -z "${GOOGLE_PROJECT_ID:-}" ] && missing="$missing GOOGLE_PROJECT_ID"
+  [ -z "${GOOGLE_PROJECT_NUMBER:-}" ] && missing="$missing GOOGLE_PROJECT_NUMBER"
+  [ -z "${LOGFLARE_GCLOUD_JSON:-}" ] && missing="$missing LOGFLARE_GCLOUD_JSON"
+  if [ -n "$missing" ]; then
+    error "LF_E2E_BACKEND=bigquery requires:$missing"
+    exit 1
+  fi
+  case "$LOGFLARE_GCLOUD_JSON" in
+    /*) ;;
+    *) error "LOGFLARE_GCLOUD_JSON must be an absolute path (got: $LOGFLARE_GCLOUD_JSON)"; exit 1 ;;
+  esac
+  if [ ! -f "$LOGFLARE_GCLOUD_JSON" ]; then
+    error "LOGFLARE_GCLOUD_JSON points to a missing file: $LOGFLARE_GCLOUD_JSON"
+    exit 1
+  fi
+  log "Backend: BigQuery (project: $GOOGLE_PROJECT_ID)"
+else
+  log "Backend: Postgres (default)"
+fi
+endgroup
+
 log "Cloning Supabase repository..."
 if [ -d "$SUPABASE_DIR" ]; then
   warn "Directory '$SUPABASE_DIR' exists. Removing..."
@@ -41,6 +64,21 @@ git checkout "$BRANCH"
 endgroup
 
 cd "$SPARSE_PATH"
+
+if [ "$LF_E2E_BACKEND" = "bigquery" ]; then
+  log "Stripping Postgres backend vars from analytics service (BigQuery mode)..."
+  if ! grep -qE '^[[:space:]]*POSTGRES_BACKEND_URL:' docker-compose.yml; then
+    error "Expected POSTGRES_BACKEND_URL in docker-compose.yml but it was not found."
+    warn  "Upstream Supabase compose may have changed; the BigQuery patch needs updating."
+    exit 1
+  fi
+  sed -i -E '/^[[:space:]]*POSTGRES_BACKEND_URL:/d; /^[[:space:]]*POSTGRES_BACKEND_SCHEMA:/d' docker-compose.yml
+  if grep -qE '^[[:space:]]*POSTGRES_BACKEND_(URL|SCHEMA):' docker-compose.yml; then
+    error "Failed to strip POSTGRES_BACKEND_* from docker-compose.yml"
+    exit 1
+  fi
+  endgroup
+fi
 
 log "Copying .env.example → .env..."
 if [ ! -f ".env.example" ]; then
@@ -134,7 +172,10 @@ probe_source() {
   echo "$out"
 }
 
-DEADLINE=$((SECONDS + 60))
+# BigQuery schema seeding is slower than Postgres, so give it a longer window.
+PROBE_TIMEOUT=60
+[ "$LF_E2E_BACKEND" = "bigquery" ] && PROBE_TIMEOUT=180
+DEADLINE=$((SECONDS + PROBE_TIMEOUT))
 for source in "${SOURCES[@]}"; do
   last_code=""
   while true; do
@@ -143,7 +184,7 @@ for source in "${SOURCES[@]}"; do
       2*) break ;;
     esac
     if [ "$SECONDS" -gt "$DEADLINE" ]; then
-      error "Source '$source' not ready after 60s (last status: $last_code)."
+      error "Source '$source' not ready after ${PROBE_TIMEOUT}s (last status: $last_code)."
       warn  "This usually means Logflare's startup_tasks crashed during seeding."
       warn  "Last 50 lines of analytics log:"
       compose logs --no-log-prefix --tail 50 analytics

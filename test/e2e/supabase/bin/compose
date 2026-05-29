@@ -7,6 +7,13 @@ BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)
 source "$BASE_DIR/config.sh"
 
 cd "$BASE_DIR/$SUPABASE_DIR/$SPARSE_PATH"
-docker compose -f docker-compose.yml -f docker-compose.logs.yml -f ../../docker-compose.e2e.yml "$@"
+
+compose_files="-f docker-compose.yml -f docker-compose.logs.yml -f ../../docker-compose.e2e.yml"
+if [ "$LF_E2E_BACKEND" = "bigquery" ]; then
+  compose_files="$compose_files -f ../../docker-compose.bigquery.yml"
+fi
+
+docker compose $compose_files "$@"
+
 cd ../..
 
