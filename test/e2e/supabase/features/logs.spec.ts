@@ -6,6 +6,11 @@ import supabase from '../lib/supabase';
 
 const execFileP = promisify(execFile);
 
+// Which Logflare log-storage backend the stack under test is using. Set by the
+// E2E harness (config.sh / CI job env). Affects diagnostics and ingestion-wait
+// timeouts only — the assertions themselves are backend-agnostic.
+const BACKEND = process.env.LF_E2E_BACKEND ?? 'postgres';
+
 // Mapping from logs.all CTE alias to the underlying Logflare source name.
 // Kept in sync with priv/supabase/endpoints/logs.all.sql — the SQL there
 // aliases each `from \`<source.name>\`` block, and tests below pass those
@@ -28,6 +33,10 @@ const SOURCE_NAME_BY_TABLE: Record<string, string> = {
 // mode (e.g. logs.all returning 5xx or hanging). Best-effort — returns an
 // empty array on any error, since this only runs on the unhappy path.
 async function sampleFromPostgres(table: string, limit = 5): Promise<string[]> {
+  // Only meaningful for the Postgres backend; the BigQuery backend has no
+  // _analytics.<table> to read from, so skip rather than emit psql errors.
+  if (BACKEND !== 'postgres') return [];
+
   const sourceName = SOURCE_NAME_BY_TABLE[table];
   const password = process.env.POSTGRES_PASSWORD;
   if (!sourceName || !password) return [];
@@ -67,11 +76,15 @@ async function sampleFromPostgres(table: string, limit = 5): Promise<string[]> {
 // Replaces a fixed sleep that was racy when CI ingestion was slow. The endpoint
 // runs the supplied SQL through Logflare via Studio's BFF; `regexp_contains` is
 // used because `LIKE` returns 500 against this backend.
+// BigQuery streaming-buffer visibility lags behind Postgres, so allow a longer
+// default ingestion window when running against the BigQuery backend.
+const DEFAULT_WAIT_FOR_LOGS_MS = BACKEND === 'bigquery' ? 300_000 : 180_000;
+
 async function waitForLogs(
   request: APIRequestContext,
   table: string,
   pattern: string,
-  { timeoutMs = 180_000, intervalMs = 1_000 }: { timeoutMs?: number; intervalMs?: number } = {}
+  { timeoutMs = DEFAULT_WAIT_FOR_LOGS_MS, intervalMs = 1_000 }: { timeoutMs?: number; intervalMs?: number } = {}
 ): Promise<void> {
   const countSql = `select count(*) as c from ${table} where regexp_contains(event_message, '${pattern}')`;
   const deadline = Date.now() + timeoutMs;
